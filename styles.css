@@ -122,7 +122,8 @@ h3 {
 .vocab-card,
 .character-pane,
 .stroke-box,
-.details-box {
+.details-box,
+.dictionary-box {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -298,7 +299,8 @@ h3 {
 }
 
 .stroke-box,
-.details-box {
+.details-box,
+.dictionary-box {
   margin-top: 16px;
   padding: 16px;
 }
@@ -348,6 +350,46 @@ dt {
 
 dd {
   margin: 0;
+  line-height: 1.45;
+}
+
+.yomitan-list {
+  display: grid;
+  gap: 10px;
+}
+
+.yomitan-entry {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fbfaf6;
+}
+
+.yomitan-headword {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.yomitan-headword strong {
+  color: var(--red);
+  font-family: "Noto Serif CJK SC", "Songti SC", serif;
+  font-size: 22px;
+}
+
+.yomitan-headword span {
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.yomitan-entry p,
+.yomitan-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
   line-height: 1.45;
 }
 

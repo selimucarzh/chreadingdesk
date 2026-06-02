@@ -22,6 +22,7 @@ The app currently supports two reading modes:
 - Browser `fetch` API for translation, pinyin/stroke assets, and local API calls.
 - [`pinyin-pro`](https://github.com/zh-lx/pinyin-pro) from jsDelivr for pinyin generation.
 - [`hanzi-writer-data`](https://github.com/chanind/hanzi-writer-data) from jsDelivr for Hanzi stroke-order path data.
+- [`CC-CEDICT for Yomitan`](https://github.com/MarvNC/cc-cedict-yomitan) imported into a local compact JSON dictionary for Chinese-English word lookup.
 
 The browser-only local server mode has no build step. The Windows desktop app requires installing npm dev dependencies before packaging.
 
@@ -62,6 +63,24 @@ Each response includes:
 - published date
 - article link
 - shortened Chinese reading text
+
+## Yomitan Dictionary Import
+
+The app includes a local CC-CEDICT dictionary imported from the Yomitan-compatible `CC-CEDICT.zip` release. It powers the `Yomitan Dictionary` panel in the character sidebar: when a Hanzi character is selected, the app searches nearby words and shows the longest CC-CEDICT matches first.
+
+The imported dictionary file is:
+
+```text
+data/yomitan-cc-cedict.json
+```
+
+To refresh it from a downloaded Yomitan dictionary zip or an extracted Yomitan dictionary folder:
+
+```bash
+npm run import:yomitan -- /path/to/CC-CEDICT.zip data/yomitan-cc-cedict.json
+```
+
+Yomitan dictionaries use an `index.json` metadata file plus `term_bank_*.json` files. The importer reads those term banks and keeps the headword, pinyin reading, and English definitions needed by this app.
 
 ## Run Locally
 
@@ -144,9 +163,11 @@ Unzip it on Windows and run `Chinese Tutor.exe`.
 index.html    Main app shell
 styles.css    Responsive UI styling
 app.js        Client-side reading, pinyin, translation, and character logic
+data/         Imported Yomitan/CC-CEDICT dictionary data
 server.js     Local Node server and RSS parser
 main.js       Electron desktop app entry point
 package.json  Electron and Windows installer configuration
+tools/        Yomitan dictionary import tooling
 README.md     Project documentation
 ```
 

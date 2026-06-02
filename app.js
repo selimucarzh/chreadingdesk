@@ -13,6 +13,8 @@ const selectedMeaning = document.querySelector("#selectedMeaning");
 const detailHanzi = document.querySelector("#detailHanzi");
 const detailPinyin = document.querySelector("#detailPinyin");
 const detailMeaning = document.querySelector("#detailMeaning");
+const yomitanStatus = document.querySelector("#yomitanStatus");
+const yomitanList = document.querySelector("#yomitanList");
 
 document.querySelector("#newTextBtn").addEventListener("click", loadNewText);
 document.querySelector("#scmpTextBtn").addEventListener("click", loadScmpText);
@@ -23,6 +25,8 @@ let currentText = "";
 let currentTranslation = "";
 let activeButton = null;
 let activePinyinToken = null;
+let activeCharIndex = -1;
+let yomitanDictionary = null;
 
 const fallbackTexts = [
   {
@@ -332,6 +336,7 @@ const dictionary = {
   日: ["ri4", "sun; day"],
 };
 
+loadYomitanDictionary();
 loadNewText();
 
 function loadDailyText() {
@@ -489,6 +494,7 @@ async function selectCharacter(char, element, charIndex) {
     activePinyinToken.classList.remove("active");
   }
   activeButton = element;
+  activeCharIndex = charIndex;
   activeButton.classList.add("active");
   activePinyinToken = pinyinText.querySelector(`[data-char-index="${charIndex}"]`);
   if (activePinyinToken) {
@@ -502,8 +508,91 @@ async function selectCharacter(char, element, charIndex) {
   detailHanzi.textContent = char;
   detailPinyin.textContent = pinyin;
   detailMeaning.textContent = meaning;
+  renderYomitanMatches(charIndex);
 
   await renderStrokeOrder(char);
+}
+
+async function loadYomitanDictionary() {
+  yomitanStatus.textContent = "Loading";
+  renderYomitanEmpty("Loading CC-CEDICT entries...");
+
+  try {
+    const response = await fetch("./data/yomitan-cc-cedict.json");
+    if (!response.ok) {
+      throw new Error("dictionary unavailable");
+    }
+    yomitanDictionary = await response.json();
+    yomitanStatus.textContent = `${yomitanDictionary.entryCount.toLocaleString()} entries`;
+    if (activeCharIndex >= 0) {
+      renderYomitanMatches(activeCharIndex);
+    } else {
+      renderYomitanEmpty("Select a Hanzi character to see CC-CEDICT matches.");
+    }
+  } catch (error) {
+    yomitanDictionary = null;
+    yomitanStatus.textContent = "Unavailable";
+    renderYomitanEmpty("CC-CEDICT dictionary could not be loaded.");
+  }
+}
+
+function renderYomitanMatches(charIndex) {
+  if (!yomitanDictionary) {
+    renderYomitanEmpty("Loading CC-CEDICT entries...");
+    return;
+  }
+
+  const matches = findYomitanMatches(charIndex).slice(0, 4);
+  yomitanList.replaceChildren();
+
+  if (!matches.length) {
+    renderYomitanEmpty("No CC-CEDICT entry found near this character.");
+    return;
+  }
+
+  matches.forEach(({ term, entries }) => {
+    entries.slice(0, 2).forEach((entry) => {
+      const item = document.createElement("div");
+      item.className = "yomitan-entry";
+      item.innerHTML = `
+        <div class="yomitan-headword">
+          <strong>${escapeHTML(term)}</strong>
+          <span>${escapeHTML(entry.reading || pinyinForText(term))}</span>
+        </div>
+        <p>${escapeHTML(entry.definitions.slice(0, 3).join("; "))}</p>
+      `;
+      yomitanList.append(item);
+    });
+  });
+}
+
+function findYomitanMatches(charIndex) {
+  const entries = yomitanDictionary.entries || {};
+  const chars = Array.from(currentText);
+  const maxLength = Math.min(yomitanDictionary.maxTermLength || 8, 8);
+  const matches = [];
+  const seen = new Set();
+
+  for (let start = Math.max(0, charIndex - maxLength + 1); start <= charIndex; start += 1) {
+    for (let end = charIndex + 1; end <= Math.min(chars.length, start + maxLength); end += 1) {
+      const term = chars.slice(start, end).join("");
+      if (seen.has(term) || !entries[term]) {
+        continue;
+      }
+      seen.add(term);
+      matches.push({ term, entries: entries[term] });
+    }
+  }
+
+  return matches.sort((left, right) => Array.from(right.term).length - Array.from(left.term).length);
+}
+
+function renderYomitanEmpty(message) {
+  yomitanList.replaceChildren();
+  const empty = document.createElement("p");
+  empty.className = "yomitan-empty";
+  empty.textContent = message;
+  yomitanList.append(empty);
 }
 
 function renderPinyinLine(chars) {
@@ -599,6 +688,13 @@ function pinyinForChar(char) {
     return window.pinyinPro.pinyin(char, { toneType: "symbol" });
   }
   return lookupCharacter(char)[0];
+}
+
+function pinyinForText(text) {
+  if (window.pinyinPro?.pinyin) {
+    return window.pinyinPro.pinyin(text, { toneType: "symbol" });
+  }
+  return Array.from(text).map((char) => lookupCharacter(char)[0]).join(" ");
 }
 
 function lookupCharacter(char) {

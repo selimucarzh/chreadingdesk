@@ -8,6 +8,7 @@
   "scripts": {
     "start": "electron .",
     "serve": "node server.js",
+    "import:yomitan": "node tools/import-yomitan-cc-cedict.js",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win nsis",
     "dist:win:portable": "electron-builder --win zip"
@@ -18,10 +19,12 @@
     "asar": true,
     "files": [
       "app.js",
+      "data/yomitan-cc-cedict.json",
       "index.html",
       "main.js",
       "server.js",
       "styles.css",
+      "tools/import-yomitan-cc-cedict.js",
       "README.md",
       "package.json"
     ],
