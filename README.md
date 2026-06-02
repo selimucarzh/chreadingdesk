@@ -43,11 +43,15 @@ Current sources:
 - China News Service world news RSS: <https://www.chinanews.com.cn/rss/world.xml>
 - China News Service finance news RSS: <https://www.chinanews.com.cn/rss/finance.xml>
 - People.com.cn world news RSS: <http://www.people.com.cn/rss/world.xml>
+- South China Morning Post People & Culture RSS, filtered to Trending China links: <https://www.scmp.com/rss/318202/feed/>
+
+SCMP publishes this feed in English. The local server parses the current Trending China RSS items, translates the selected English summary into simplified Chinese for Hanzi/pinyin reading, and keeps the original English summary as the translation panel text.
 
 The server exposes parsed reading passages through:
 
 ```text
 GET /api/news
+GET /api/news?source=scmp
 ```
 
 Each response includes:
@@ -124,6 +128,7 @@ Unzip it on Windows and run `Chinese Tutor.exe`.
 ## Features
 
 - Fetches Chinese news text from online RSS sources.
+- Fetches SCMP Trending China RSS items through the `SCMP Trending` button.
 - Shows Hanzi and matching pinyin.
 - Highlights the matching pinyin token when a Hanzi character is selected.
 - Shows English translation for the current passage.

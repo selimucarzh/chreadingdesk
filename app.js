@@ -15,6 +15,7 @@ const detailPinyin = document.querySelector("#detailPinyin");
 const detailMeaning = document.querySelector("#detailMeaning");
 
 document.querySelector("#newTextBtn").addEventListener("click", loadNewText);
+document.querySelector("#scmpTextBtn").addEventListener("click", loadScmpText);
 document.querySelector("#dailyTextBtn").addEventListener("click", loadDailyText);
 document.querySelector("#translateBtn").addEventListener("click", translateCurrentText);
 
@@ -344,14 +345,27 @@ function loadDailyText() {
 }
 
 async function loadNewText() {
-  setStatus("Loading Chinese newspaper text...");
+  await loadOnlineText();
+}
+
+async function loadScmpText() {
+  await loadOnlineText("scmp", "Loading SCMP Trending China text...");
+}
+
+async function loadOnlineText(source = "", loadingMessage = "Loading Chinese newspaper text...") {
+  setStatus(loadingMessage);
   try {
-    const article = await fetchNewspaperText();
+    const article = await fetchNewspaperText(source);
     currentText = cleanChinese(article.text);
     currentTranslation = article.translation || "";
     sourceLabel.textContent = `${article.source} - ${article.category}`;
     renderText(currentText);
-    await translateCurrentText();
+    if (currentTranslation) {
+      translationText.textContent = currentTranslation;
+      setStatus("Online text ready");
+    } else {
+      await translateCurrentText();
+    }
   } catch (error) {
     const fallback = fallbackTexts[Math.floor(Math.random() * fallbackTexts.length)];
     currentText = fallback.text;
@@ -363,8 +377,13 @@ async function loadNewText() {
   }
 }
 
-async function fetchNewspaperText() {
-  const response = await fetch("/api/news");
+async function fetchNewspaperText(source = "") {
+  const url = new URL("/api/news", window.location.origin);
+  if (source) {
+    url.searchParams.set("source", source);
+  }
+
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error("local newspaper API unavailable");
   }

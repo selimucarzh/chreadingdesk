@@ -36,12 +36,16 @@ button {
   font-weight: 800;
 }
 
-button:nth-child(2) {
+button.button-gold {
   background: var(--gold);
 }
 
-button:nth-child(3) {
+button.button-teal {
   background: var(--teal);
+}
+
+button.button-blue {
+  background: var(--blue);
 }
 
 .app-shell {
