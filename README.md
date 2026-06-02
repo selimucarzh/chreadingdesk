@@ -17,11 +17,13 @@ The app currently supports two reading modes:
 - CSS3 for the responsive two-pane reading interface.
 - Vanilla JavaScript for all client-side interaction.
 - Node.js built-in `http` server for local hosting and server-side RSS parsing.
+- Electron for the Windows desktop app shell.
+- Electron Builder for creating a Windows installer.
 - Browser `fetch` API for translation, pinyin/stroke assets, and local API calls.
 - [`pinyin-pro`](https://github.com/zh-lx/pinyin-pro) from jsDelivr for pinyin generation.
 - [`hanzi-writer-data`](https://github.com/chanind/hanzi-writer-data) from jsDelivr for Hanzi stroke-order path data.
 
-No build step or package installation is required.
+The browser-only local server mode has no build step. The Windows desktop app requires installing npm dev dependencies before packaging.
 
 ## Translation Engine
 
@@ -70,6 +72,55 @@ Open:
 http://127.0.0.1:5177
 ```
 
+## Run as a Desktop App
+
+Install the Electron dependencies once:
+
+```bash
+cd "/home/noqac901/Desktop/Chinese Tutor"
+npm install
+```
+
+Start the desktop app in development:
+
+```bash
+npm start
+```
+
+When the app opens, Electron starts the local parser server inside the app and loads the reading desk from that local address. The app then connects to the online Chinese RSS sources through `GET /api/news`, and translation, pinyin, and stroke-order assets continue to load from their online services.
+
+## Build a Windows Installer
+
+On a Windows machine, run:
+
+```bash
+npm run dist:win
+```
+
+The installer is created in:
+
+```text
+dist/
+```
+
+The Windows installer uses NSIS, creates a Start Menu shortcut, and creates a desktop shortcut named `Chinese Tutor`. The installed app runs without a separate terminal window.
+
+The repository also includes a GitHub Actions workflow at `.github/workflows/build-windows.yml`. Push the project to GitHub or run the workflow manually, then download the `Chinese-Tutor-Windows-Installer` artifact from the workflow run. That artifact contains the Windows installer.
+
+When building from Linux, NSIS installer generation requires Wine. If Wine is not installed, build a downloadable portable Windows package instead:
+
+```bash
+npm run dist:win:portable
+```
+
+That command creates:
+
+```text
+dist/Chinese Tutor-1.0.0-win.zip
+```
+
+Unzip it on Windows and run `Chinese Tutor.exe`.
+
 ## Features
 
 - Fetches Chinese news text from online RSS sources.
@@ -89,6 +140,8 @@ index.html    Main app shell
 styles.css    Responsive UI styling
 app.js        Client-side reading, pinyin, translation, and character logic
 server.js     Local Node server and RSS parser
+main.js       Electron desktop app entry point
+package.json  Electron and Windows installer configuration
 README.md     Project documentation
 ```
 

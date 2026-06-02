@@ -1,6 +1,6 @@
 const http = require("node:http");
 const { readFile } = require("node:fs/promises");
-const { extname, join, normalize } = require("node:path");
+const { extname, join } = require("node:path");
 
 const PORT = Number(process.env.PORT || 5177);
 const ROOT = __dirname;
@@ -30,11 +30,12 @@ const mimeTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
-  ".md": "text/markdown; charset=utf-8",
 };
 
-http
-  .createServer(async (req, res) => {
+const staticFiles = new Set(["/index.html", "/styles.css", "/app.js"]);
+
+function createAppServer() {
+  return http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://${req.headers.host}`);
       if (url.pathname === "/api/news") {
@@ -45,10 +46,35 @@ http
     } catch (error) {
       writeJSON(res, 500, { error: error.message || "server error" });
     }
-  })
-  .listen(PORT, "127.0.0.1", () => {
-    console.log(`Chinese Tutor listening on http://127.0.0.1:${PORT}`);
   });
+}
+
+function startServer(port = PORT, host = "127.0.0.1") {
+  const server = createAppServer();
+  return new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, host, () => {
+      server.off("error", reject);
+      const address = server.address();
+      const actualPort = typeof address === "object" && address ? address.port : port;
+      resolve({
+        server,
+        url: `http://${host}:${actualPort}`,
+      });
+    });
+  });
+}
+
+if (require.main === module) {
+  startServer()
+    .then(({ url }) => {
+      console.log(`Chinese Tutor listening on ${url}`);
+    })
+    .catch((error) => {
+      console.error(error);
+      process.exitCode = 1;
+    });
+}
 
 async function handleNews(res) {
   const groups = await Promise.allSettled(sources.map(readSource));
@@ -67,7 +93,7 @@ async function handleNews(res) {
 }
 
 async function readSource(source) {
-  const response = await fetch(source.url, {
+  const response = await fetchWithTimeout(source.url, {
     headers: {
       "User-Agent": "ChineseTutor/1.0 Mandarin learning reader",
       Accept: "application/rss+xml, application/xml, text/xml, */*",
@@ -90,6 +116,20 @@ async function readSource(source) {
     }))
     .filter((item) => matchesTopic(item.text, source.keywords))
     .slice(0, 8);
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = 8000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function parseRSS(xml) {
@@ -139,12 +179,12 @@ function countHanzi(value) {
 
 async function serveStatic(pathname, res) {
   const requestPath = pathname === "/" ? "/index.html" : pathname;
-  const filePath = normalize(join(ROOT, requestPath));
-  if (!filePath.startsWith(ROOT)) {
-    writeJSON(res, 403, { error: "forbidden" });
+  if (!staticFiles.has(requestPath)) {
+    writeJSON(res, 404, { error: "not found" });
     return;
   }
 
+  const filePath = join(ROOT, requestPath);
   const content = await readFile(filePath);
   res.writeHead(200, { "Content-Type": mimeTypes[extname(filePath)] || "application/octet-stream" });
   res.end(content);
@@ -154,3 +194,8 @@ function writeJSON(res, status, payload) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
 }
+
+module.exports = {
+  createAppServer,
+  startServer,
+};

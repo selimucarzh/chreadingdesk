@@ -1,0 +1,51 @@
+{
+  "name": "chinese-tutor",
+  "version": "1.0.0",
+  "description": "A Windows desktop Mandarin reading desk with online Chinese news parsing.",
+  "author": "Selim Ucar",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "serve": "node server.js",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win nsis",
+    "dist:win:portable": "electron-builder --win zip"
+  },
+  "build": {
+    "appId": "com.selimucar.chinesetutor",
+    "productName": "Chinese Tutor",
+    "asar": true,
+    "files": [
+      "app.js",
+      "index.html",
+      "main.js",
+      "server.js",
+      "styles.css",
+      "README.md",
+      "package.json"
+    ],
+    "win": {
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Chinese Tutor"
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.7.0",
+    "electron-builder": "^24.13.3"
+  }
+}
